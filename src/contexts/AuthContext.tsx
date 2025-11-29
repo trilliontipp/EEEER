@@ -43,8 +43,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         })
 
         if (!response.ok) {
-            const error = await response.json()
-            throw new Error(error.message || 'Login failed')
+            let errorMessage = 'Login failed'
+            try {
+                const error = await response.json()
+                errorMessage = error.message || error.error || 'Login failed'
+            } catch (e) {
+                // Response is not JSON (likely HTML error page)
+                errorMessage = `Server error (${response.status}): ${response.statusText}`
+            }
+            throw new Error(errorMessage)
         }
 
         const data = await response.json()
@@ -62,8 +69,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         })
 
         if (!response.ok) {
-            const error = await response.json()
-            throw new Error(error.message || 'Registration failed')
+            let errorMessage = 'Registration failed'
+            try {
+                const error = await response.json()
+                errorMessage = error.message || error.error || 'Registration failed'
+            } catch (e) {
+                // Response is not JSON (likely HTML error page)
+                errorMessage = `Server error (${response.status}): ${response.statusText}`
+            }
+            throw new Error(errorMessage)
         }
 
         const data = await response.json()
