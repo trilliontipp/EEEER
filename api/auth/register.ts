@@ -4,8 +4,22 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+    // Set CORS headers
+    res.setHeader('Content-Type', 'application/json');
+
     if (req.method !== 'POST') {
         return res.status(405).json({ message: 'Method not allowed' });
+    }
+
+    // Check for required environment variables
+    if (!process.env.MONGODB_URI) {
+        console.error('MONGODB_URI not set');
+        return res.status(500).json({ message: 'Server misconfiguration: MONGODB_URI not set', error: 'MONGODB_URI not set' });
+    }
+
+    if (!process.env.JWT_SECRET) {
+        console.error('JWT_SECRET not set');
+        return res.status(500).json({ message: 'Server misconfiguration: JWT_SECRET not set', error: 'JWT_SECRET not set' });
     }
 
     try {
@@ -42,7 +56,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         // Create token
         const token = jwt.sign(
             { userId: result.insertedId },
-            process.env.JWT_SECRET!,
+            process.env.JWT_SECRET,
             { expiresIn: '7d' }
         );
 
@@ -57,7 +71,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         });
     } catch (error) {
         console.error('Registration error:', error);
-        const errorMessage = error instanceof Error ? error.message : 'Server error';
-        res.status(500).json({ message: 'Server error', error: errorMessage });
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        return res.status(500).json({ message: 'Server error', error: errorMessage });
     }
 }
